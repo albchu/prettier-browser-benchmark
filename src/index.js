@@ -2,15 +2,28 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 // import "./index.css";
 import "@shopify/polaris/build/esm/styles.css";
-import App from "./App";
+import PreBuiltBenchmark from "./PreBuiltBenchmark";
+import CustomBenchmark from "./CustomBenchmark";
 import reportWebVitals from "./reportWebVitals";
 import { AppProvider, Page } from "@shopify/polaris";
+import { createBrowserRouter, RouterProvider, Route } from "react-router-dom";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <CustomBenchmark />,
+  },
+  {
+    path: "/prebuilt",
+    element: <PreBuiltBenchmark />,
+  },
+]);
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <AppProvider>
     <Page title="Prettier Browser Benchmarking">
-      <App />
+      <RouterProvider router={router} />
     </Page>
   </AppProvider>
 );

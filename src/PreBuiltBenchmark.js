@@ -17,7 +17,7 @@ import cssLong from "./test-assets/css-long";
 
 const NUM_ITERATIONS = 100;
 
-function App() {
+function PreBuiltBenchmark() {
   const [numIterations, setNumIterations] = useState(NUM_ITERATIONS);
   const [benchmarkResults, setBenchmarkResults] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -128,4 +128,4 @@ function App() {
   );
 }
 
-export default App;
+export default PreBuiltBenchmark;

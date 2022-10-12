@@ -1,0 +1,144 @@
+/* eslint-disable no-unused-expressions */
+// import "./App.css";
+import { useState } from "react";
+import {
+  IndexTable,
+  Select,
+  Card,
+  Button,
+  useIndexResourceState,
+  TextField,
+} from "@shopify/polaris";
+import { times, reduce } from "lodash";
+import { useFormatAsset } from "./useFormatAsset";
+import cssShort from "./test-assets/css-short";
+import cssMedium from "./test-assets/css-medium";
+import cssLong from "./test-assets/css-long";
+
+const NUM_ITERATIONS = 100;
+
+function PreBuiltBenchmark() {
+  const [numIterations, setNumIterations] = useState(NUM_ITERATIONS);
+  const [benchmarkResults, setBenchmarkResults] = useState([]);
+  const [isRunning, setIsRunning] = useState(false);
+  const { getFormattedAsset } = useFormatAsset();
+  const [input, setInput] = useState("");
+  const [extension, setExtension] = useState("");
+
+  const benchmarkConfigs = [
+    {
+      title: "CSS short (~330 lines unformatted)",
+      extension: "css",
+      input: cssShort,
+    },
+    {
+      title: "CSS medium (~650 lines unformatted)",
+      extension: "css",
+      input: cssMedium,
+    },
+    {
+      title: "CSS Long (~1500 lines unformatted)",
+      extension: "css",
+      input: cssLong,
+    },
+  ];
+
+  const { selectedResources, allResourcesSelected, handleSelectionChange } =
+    useIndexResourceState(benchmarkConfigs);
+
+  const runTests = async (inputValue, extensionValue, numIterations) => {
+    console.log("Running test", { inputValue, numIterations });
+
+    const raw = await Promise.all(
+      times(numIterations, (i) => {
+        return new Promise((resolve) => {
+          console.log("promise", i);
+          const before = Date.now();
+          getFormattedAsset(inputValue, extensionValue);
+          const after = Date.now();
+
+          return resolve(after - before);
+        });
+      })
+    );
+
+    return {
+      avgTime: reduce(raw, (sum, n) => sum + n, 0) / raw.length,
+      slowestTime: Math.max(...raw),
+      fastestTime: Math.min(...raw),
+    };
+  };
+
+  const handleRunBenchmark = async () => {
+    console.log("Running benchmark...");
+    setIsRunning(true);
+
+    const results = await runTests(input, extension, numIterations);
+
+    console.log("Benchmark results", results);
+    setBenchmarkResults([results]);
+    setIsRunning(false);
+  };
+
+  return (
+    <div>
+      <Card sectioned>
+        <TextField
+          label="Number of iterations"
+          value={numIterations}
+          onChange={setNumIterations}
+        />
+        <br />
+        <Select
+          label="Language"
+          options={["", "liquid", "json", "css", "js", "scss"]}
+          onChange={setExtension}
+          value={extension}
+        />
+        <br />
+        <TextField
+          label="Input"
+          value={input}
+          onChange={setInput}
+          multiline={4}
+        />
+        <br />
+        <Button onClick={handleRunBenchmark} disabled={!extension || !input}>
+          Run Benchmark
+        </Button>
+        {benchmarkResults.length ? (
+          <Button onClick={() => setBenchmarkResults([])}>Reset</Button>
+        ) : null}
+      </Card>
+      <Card>
+        <IndexTable
+          itemCount={benchmarkConfigs.length}
+          selectedItemsCount={
+            allResourcesSelected ? "All" : selectedResources.length
+          }
+          onSelectionChange={handleSelectionChange}
+          headings={[
+            { title: "Number of Iterations" },
+            { title: "Avg time (MS)" },
+            { title: "Slowest time (MS)" },
+            { title: "Fastest time (MS)" },
+          ]}
+          selectable={false}
+        >
+          {benchmarkResults.map(
+            ({ title, avgTime, slowestTime, fastestTime }, index) => (
+              <IndexTable.Row id={index} key={index} position={index}>
+                <IndexTable.Cell>{numIterations}</IndexTable.Cell>
+                <IndexTable.Cell>{avgTime}</IndexTable.Cell>
+                <IndexTable.Cell>{slowestTime}</IndexTable.Cell>
+                <IndexTable.Cell>{fastestTime}</IndexTable.Cell>
+              </IndexTable.Row>
+            )
+          )}
+        </IndexTable>
+      </Card>
+    </div>
+  );
+}
+
+export default PreBuiltBenchmark;
